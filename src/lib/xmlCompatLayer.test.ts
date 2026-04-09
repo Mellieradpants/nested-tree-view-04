@@ -90,6 +90,23 @@ describe("XML Compatibility Layer", () => {
     });
   });
 
+  describe("known root with no structural roles", () => {
+    const WEAK_BILL = `<?xml version="1.0" encoding="UTF-8"?>
+<bill id="empty-bill">
+  <metadata>Some metadata</metadata>
+  <notes>Editorial notes only</notes>
+</bill>`;
+
+    it("fails safely when root is known but no structural children exist", () => {
+      const result = preprocessXml(WEAK_BILL);
+      expect(result.detection.unsupportedSchemaReason).toBeTruthy();
+      expect(result.detection.unsupportedSchemaReason).toContain("<bill>");
+      expect(result.detection.unsupportedSchemaReason).toContain("no recognized structural roles");
+      expect(result.detection.schemaDetected).toBeNull();
+      expect(result.detection.fallbackUsed).toBe(false);
+    });
+  });
+
   describe("malformed XML", () => {
     it("falls back gracefully for malformed XML", () => {
       const result = preprocessXml("<not valid xml <<>>");
