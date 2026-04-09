@@ -97,7 +97,8 @@ const SelectedText = ({ node, allNodes = [], xmlSource }: Props) => {
   const isLeaf = children.length === 0;
 
   // Leaf nodes: always show full text
-  const labelMatchesText = node.text.trim().replace(/\s+/g, " ") === node.label.trim().replace(/\s+/g, " ");
+  const normalize = (s: string) => s.trim().replace(/\s+/g, " ").replace(/[\s.,;:—–\-]+$/, "");
+  const labelMatchesText = normalize(node.text) === normalize(node.label);
 
   if (isLeaf || allNodes.length === 0) {
     return (

@@ -235,7 +235,8 @@ const Index = () => {
     const tag = selectedNode.type === "part" ? "part" : selectedNode.type === "section" ? "section" : selectedNode.type === "subsection" ? "subsection" : "clause";
     const headingText = selectedNode.label;
     const contentText = selectedNode.text;
-    const labelMatchesText = contentText.trim().replace(/\s+/g, " ") === headingText.trim().replace(/\s+/g, " ");
+    const norm = (s: string) => s.trim().replace(/\s+/g, " ").replace(/[\s.,;:—–\-]+$/, "");
+    const labelMatchesText = norm(contentText) === norm(headingText);
     if (labelMatchesText) {
       return `<${tag} id="${selectedNode.id}">\n  ${contentText}\n</${tag}>`;
     }
