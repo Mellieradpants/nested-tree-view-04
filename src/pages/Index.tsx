@@ -44,6 +44,35 @@ function parseIntakeSummary(xml: string, name: string): IntakeSummary {
   return { fileName: name, fileSize, format: "XML", rootElement, elementCount, sections: sectionCount, subsections: subsectionCount, clauses: clauseCount };
 }
 
+const SAMPLE_XML = `<?xml version="1.0" encoding="UTF-8"?>
+<act id="sample-act" jurisdiction="federal">
+  <part id="part-1">
+    <heading>General Provisions</heading>
+    <section id="sec-1">
+      <heading>Definitions</heading>
+      <clause id="cl-1">For the purposes of this Act, "regulated entity" means any corporation engaged in the manufacture or sale of controlled substances.</clause>
+      <clause id="cl-2">The term "Authority" refers to the Federal Regulatory Authority established under Part III.</clause>
+    </section>
+    <section id="sec-2">
+      <heading>Scope of Application</heading>
+      <subsection id="sub-2a">This Act applies to all regulated entities operating within federal jurisdiction.</subsection>
+      <subsection id="sub-2b">A foreign entity may apply for an exemption under this section.</subsection>
+    </section>
+  </part>
+  <part id="part-2">
+    <heading>Obligations and Prohibitions</heading>
+    <section id="sec-3">
+      <heading>Reporting Requirements</heading>
+      <clause id="cl-3">Every regulated entity shall submit an annual compliance report by December 31.</clause>
+      <clause id="cl-4">Late submission shall result in a penalty not exceeding $50,000 per month.</clause>
+    </section>
+    <section id="sec-4">
+      <heading>Prohibited Activities</heading>
+      <clause id="cl-5">No regulated entity may sell controlled substances to any person under 18.</clause>
+    </section>
+  </part>
+</act>`;
+
 type ProcessingPhase = "idle" | "processing" | "summary" | "done";
 
 const Index = () => {
