@@ -1,5 +1,6 @@
 import { useState, useMemo, useCallback, useRef } from "react";
-import { legislativeData, LegislativeNode } from "@/data/legislativeData";
+import { LegislativeNode } from "@/data/legislativeData";
+import { parseXmlToNodes } from "@/lib/parseXmlToNodes";
 import StructureTree from "@/components/StructureTree";
 import SelectedText from "@/components/SelectedText";
 import BreakdownPanel from "@/components/BreakdownPanel";
