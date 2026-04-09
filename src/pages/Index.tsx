@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, useRef, useEffect } from "react";
+import { useState, useMemo, useCallback, useRef } from "react";
 import { legislativeData, LegislativeNode } from "@/data/legislativeData";
 import StructureTree from "@/components/StructureTree";
 import SelectedText from "@/components/SelectedText";
@@ -44,6 +44,8 @@ function parseIntakeSummary(xml: string, name: string): IntakeSummary {
   return { fileName: name, fileSize, format: "XML", rootElement, elementCount, sections: sectionCount, subsections: subsectionCount, clauses: clauseCount };
 }
 
+type ProcessingPhase = "idle" | "processing" | "summary" | "done";
+
 const Index = () => {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [activeData, setActiveData] = useState<LegislativeNode[] | null>(null);
@@ -58,17 +60,27 @@ const Index = () => {
   const [xmlInput, setXmlInput] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [intakeSummary, setIntakeSummary] = useState<IntakeSummary | null>(null);
-  const [showSummary, setShowSummary] = useState(false);
+  const [phase, setPhase] = useState<ProcessingPhase>("idle");
+  const [processingName, setProcessingName] = useState("");
 
   const processXml = useCallback((xml: string, name: string) => {
     if (!xml.trim()) return;
 
-    // Show intake summary first
-    const summary = parseIntakeSummary(xml, name);
-    setIntakeSummary(summary);
-    setShowSummary(true);
+    // Phase 1: Processing indicator
+    setProcessingName(name);
+    setPhase("processing");
+    toast(`Processing ${name}…`);
 
-    // Transition to full output after a brief preview
+    const summary = parseIntakeSummary(xml, name);
+
+    // Phase 2: Show summary after brief delay
+    setTimeout(() => {
+      setIntakeSummary(summary);
+      setPhase("summary");
+      toast.success(`Processed: ${name}`);
+    }, 400);
+
+    // Phase 3: Reveal full structure
     setTimeout(() => {
       const docId = `doc-${Date.now()}`;
       const newDoc: RecentDoc = {
@@ -85,9 +97,8 @@ const Index = () => {
         localStorage.setItem("recent-docs", JSON.stringify(updated));
         return updated;
       });
-      setShowSummary(false);
-      toast.success(`Processed: ${name}`);
-    }, 1200);
+      setPhase("done");
+    }, 1000);
   }, []);
 
   const handleFile = useCallback((file: File) => {
@@ -107,6 +118,16 @@ const Index = () => {
     }
     processXml(xmlInput, `Document (${new Date().toLocaleTimeString()})`);
   }, [xmlInput, processXml]);
+
+  // Auto-process on paste
+  const handlePaste = useCallback((e: React.ClipboardEvent<HTMLTextAreaElement>) => {
+    const pasted = e.clipboardData.getData("text");
+    if (pasted.trim().startsWith("<")) {
+      setTimeout(() => {
+        processXml(pasted, `Pasted (${new Date().toLocaleTimeString()})`);
+      }, 50);
+    }
+  }, [processXml]);
 
   const switchToDoc = useCallback((doc: RecentDoc) => {
     setActiveData(doc.data);
@@ -140,7 +161,7 @@ const Index = () => {
   }, [activeData]);
 
   const copyToClipboard = useCallback((text: string, label: string) => {
-    navigator.clipboard.writeText(text).then(() => toast.success(`${label} copied`));
+    navigator.clipboard.writeText(text).then(() => toast.success(`Copied`));
   }, []);
 
   const downloadJson = useCallback((json: string, filename: string) => {
@@ -151,7 +172,7 @@ const Index = () => {
     a.download = filename;
     a.click();
     URL.revokeObjectURL(url);
-    toast.success("JSON downloaded");
+    toast.success("Downloaded");
   }, []);
 
   const xmlSource = useMemo(() => {
@@ -165,7 +186,7 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-background flex flex-col">
       {/* Header */}
-      <header className="border-b border-border px-4 lg:px-6 py-4">
+      <header className="border-b border-border px-4 lg:px-6 py-3">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-base font-semibold text-foreground tracking-tight">XML Adapter</h1>
@@ -174,7 +195,6 @@ const Index = () => {
           {recentDocs.length > 0 && (
             <div className="hidden sm:flex items-center gap-1.5">
               <Clock className="h-3 w-3 text-muted-foreground" />
-              <span className="text-[10px] text-muted-foreground mr-1">Recent:</span>
               {recentDocs.slice(0, 3).map((doc) => (
                 <button
                   key={doc.id}
@@ -194,9 +214,13 @@ const Index = () => {
         </div>
       </header>
 
-      {/* Input zone */}
+      {/* Drop zone + input */}
       <div
-        className={`border-b border-border px-4 lg:px-6 py-4 transition-colors ${isDragOver ? "bg-primary/5 border-primary/30" : ""}`}
+        className={`border-b border-border px-4 lg:px-6 py-4 transition-all duration-200 ${
+          isDragOver
+            ? "bg-primary/5 border-b-primary/40 ring-1 ring-inset ring-primary/20"
+            : ""
+        }`}
         onDragOver={(e) => { e.preventDefault(); setIsDragOver(true); }}
         onDragLeave={() => setIsDragOver(false)}
         onDrop={(e) => {
@@ -207,30 +231,39 @@ const Index = () => {
         }}
       >
         <div className="flex flex-col gap-3">
-          <div className="relative">
+          {/* Primary drop zone / textarea */}
+          <div
+            className={`relative rounded-lg border-2 border-dashed transition-all duration-200 ${
+              isDragOver
+                ? "border-primary bg-primary/5 shadow-[0_0_20px_-4px_hsl(var(--primary)/0.3)]"
+                : "border-border hover:border-muted-foreground/30"
+            }`}
+          >
             <textarea
-              className="w-full h-28 px-3 py-2.5 text-xs bg-muted/30 border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/40 font-mono resize-none leading-relaxed"
-              placeholder={`Paste XML here or drag and drop a file…\n\n<act>\n  <part id="1">\n    <heading>General Provisions</heading>\n  </part>\n</act>`}
+              className="w-full h-28 px-3 py-2.5 text-xs bg-transparent text-foreground placeholder:text-muted-foreground focus:outline-none font-mono resize-none leading-relaxed rounded-lg"
+              placeholder={isDragOver ? "Drop XML file here…" : "Paste XML here or drag & drop a file…"}
               value={xmlInput}
               onChange={(e) => setXmlInput(e.target.value)}
+              onPaste={handlePaste}
             />
             {xmlInput && (
               <button
-                onClick={() => setXmlInput("")}
+                onClick={() => { setXmlInput(""); setPhase("idle"); setActiveData(null); setIntakeSummary(null); }}
                 className="absolute top-2 right-2 p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
               >
                 <X className="h-3.5 w-3.5" />
               </button>
             )}
           </div>
+
           <div className="flex items-center gap-2">
             <Button
               onClick={handleProcess}
               size="sm"
-              className="h-9 px-5 text-xs font-medium gap-2"
-              disabled={!xmlInput.trim()}
+              className="h-8 px-4 text-xs font-medium gap-1.5"
+              disabled={!xmlInput.trim() || phase === "processing"}
             >
-              <Play className="h-3.5 w-3.5" /> Process
+              <Play className="h-3 w-3" /> Process
             </Button>
             <input
               ref={fileInputRef}
@@ -245,85 +278,61 @@ const Index = () => {
             <Button
               variant="outline"
               size="sm"
-              className="h-9 text-xs gap-2"
+              className="h-8 text-xs gap-1.5"
               onClick={() => fileInputRef.current?.click()}
             >
-              <Upload className="h-3.5 w-3.5" /> Upload File
+              <Upload className="h-3 w-3" /> Upload
             </Button>
-            {isDragOver && (
-              <span className="text-xs text-primary animate-pulse">Drop file here…</span>
-            )}
-            {!hasOutput && (
-              <span className="text-[11px] text-muted-foreground ml-auto hidden sm:inline">Paste XML → structure appears instantly → export JSON</span>
+            {phase === "processing" && (
+              <span className="text-xs text-primary animate-pulse ml-2">Processing {processingName}…</span>
             )}
           </div>
         </div>
       </div>
 
       {/* Intake summary card */}
-      {showSummary && intakeSummary && (
-        <div className="border-b border-border px-4 lg:px-6 py-4 animate-in fade-in slide-in-from-top-2 duration-300">
-          <div className="rounded-lg border border-primary/20 bg-primary/5 p-4 max-w-2xl">
-            <div className="flex items-center gap-2 mb-3">
-              <FileCode className="h-4 w-4 text-primary" />
-              <span className="text-sm font-medium text-foreground">Intake Preview</span>
-              <span className="ml-auto text-[10px] text-muted-foreground animate-pulse">Processing…</span>
-            </div>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-3">
-              <div>
-                <span className="text-[9px] text-muted-foreground uppercase tracking-wider block">File</span>
-                <span className="text-xs text-foreground font-medium truncate block" title={intakeSummary.fileName}>{intakeSummary.fileName.length > 24 ? intakeSummary.fileName.slice(0, 24) + "…" : intakeSummary.fileName}</span>
-              </div>
-              <div>
-                <span className="text-[9px] text-muted-foreground uppercase tracking-wider block">Size</span>
-                <span className="text-xs text-foreground font-medium">{intakeSummary.fileSize}</span>
-              </div>
-              <div>
-                <span className="text-[9px] text-muted-foreground uppercase tracking-wider block">Format</span>
-                <span className="text-xs text-foreground font-medium">{intakeSummary.format}</span>
-              </div>
-              <div>
-                <span className="text-[9px] text-muted-foreground uppercase tracking-wider block">Root</span>
-                <span className="text-xs text-foreground font-mono font-medium">{intakeSummary.rootElement}</span>
-              </div>
-            </div>
-            <div className="flex items-center gap-4 pt-2 border-t border-primary/10">
-              <div className="flex items-center gap-1.5">
-                <Hash className="h-3 w-3 text-muted-foreground" />
-                <span className="text-[11px] text-muted-foreground">{intakeSummary.elementCount} elements</span>
-              </div>
-              {intakeSummary.sections > 0 && (
-                <div className="flex items-center gap-1.5">
-                  <Layers className="h-3 w-3 text-muted-foreground" />
-                  <span className="text-[11px] text-muted-foreground">{intakeSummary.sections} sections</span>
-                </div>
-              )}
-              {intakeSummary.subsections > 0 && (
-                <span className="text-[11px] text-muted-foreground">{intakeSummary.subsections} subsections</span>
-              )}
-              {intakeSummary.clauses > 0 && (
-                <span className="text-[11px] text-muted-foreground">~{intakeSummary.clauses} clauses</span>
-              )}
-            </div>
+      {intakeSummary && (phase === "summary" || phase === "done") && (
+        <div className={`border-b border-border px-4 lg:px-6 py-3 transition-all duration-300 ${phase === "summary" ? "animate-in fade-in slide-in-from-top-1 duration-200" : ""}`}>
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[11px]">
+            <span className="flex items-center gap-1.5 text-foreground font-medium">
+              <FileCode className="h-3 w-3 text-primary" />
+              {intakeSummary.fileName.length > 30 ? intakeSummary.fileName.slice(0, 30) + "…" : intakeSummary.fileName}
+            </span>
+            <span className="text-muted-foreground">{intakeSummary.fileSize}</span>
+            <span className="text-muted-foreground">{intakeSummary.format}</span>
+            <span className="text-muted-foreground font-mono">{intakeSummary.rootElement}</span>
+            <span className="flex items-center gap-1 text-muted-foreground">
+              <Hash className="h-2.5 w-2.5" />{intakeSummary.elementCount} elements
+            </span>
+            {intakeSummary.sections > 0 && (
+              <span className="flex items-center gap-1 text-muted-foreground">
+                <Layers className="h-2.5 w-2.5" />{intakeSummary.sections} sections
+              </span>
+            )}
+            {intakeSummary.subsections > 0 && (
+              <span className="text-muted-foreground">{intakeSummary.subsections} subsections</span>
+            )}
+            {intakeSummary.clauses > 0 && (
+              <span className="text-muted-foreground">~{intakeSummary.clauses} clauses</span>
+            )}
           </div>
         </div>
       )}
 
       {/* Results area */}
-      {hasOutput ? (
-        <>
-          {/* Transformation pipeline indicator */}
+      {hasOutput && phase === "done" ? (
+        <div className="flex-1 flex flex-col min-h-0 animate-in fade-in duration-300">
+          {/* Export bar */}
           <div className="border-b border-border px-4 lg:px-6 py-2 flex items-center justify-between">
-            <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
-              <span className="px-2 py-0.5 rounded bg-muted border border-border">XML Input</span>
+            <div className="hidden sm:flex items-center gap-1.5 text-[10px] text-muted-foreground">
+              <span className="px-2 py-0.5 rounded bg-muted border border-border">XML</span>
               <ChevronRight className="h-3 w-3 text-primary" />
-              <span className="px-2 py-0.5 rounded bg-primary/10 text-primary border border-primary/20 font-medium">Structural Reconstruction</span>
+              <span className="px-2 py-0.5 rounded bg-primary/10 text-primary border border-primary/20 font-medium">Structure</span>
               <ChevronRight className="h-3 w-3 text-primary" />
-              <span className="px-2 py-0.5 rounded bg-muted border border-border">JSON Output</span>
+              <span className="px-2 py-0.5 rounded bg-muted border border-border">JSON</span>
             </div>
             <div className="flex items-center gap-1.5">
-              <span className="text-[9px] text-muted-foreground uppercase tracking-wider mr-1">Export</span>
-              <Button variant="default" size="sm" className="h-6 text-[10px] gap-1 px-2" disabled={!fullJson} onClick={() => fullJson && copyToClipboard(fullJson, "Full JSON")}>
+              <Button variant="default" size="sm" className="h-6 text-[10px] gap-1 px-2" disabled={!fullJson} onClick={() => fullJson && copyToClipboard(fullJson, "JSON")}>
                 <Copy className="h-2.5 w-2.5" /> Copy JSON
               </Button>
               <Button variant="outline" size="sm" className="h-6 text-[10px] gap-1 px-2" disabled={!fullJson} onClick={() => fullJson && downloadJson(fullJson, "document-export.json")}>
@@ -334,23 +343,22 @@ const Index = () => {
 
           {/* Desktop 3-column */}
           <div className="hidden lg:grid lg:grid-cols-[260px_1fr_1fr] flex-1 min-h-0">
-            {/* Structure */}
             <div className="border-r border-border overflow-y-auto px-3 py-4">
-              <h2 className="text-[10px] font-semibold text-primary uppercase tracking-widest mb-3 px-1">Document Structure</h2>
               <StructureTree nodes={activeData} selectedId={selectedId} onSelect={setSelectedId} />
             </div>
 
-            {/* Selected unit detail */}
             <div className="border-r border-border overflow-y-auto px-5 py-4 flex flex-col gap-3">
               <div className="flex items-center justify-between">
-                <span className="text-[9px] font-medium text-muted-foreground uppercase tracking-widest">Selected Unit</span>
+                <span className="text-[9px] font-medium text-muted-foreground uppercase tracking-widest">
+                  {selectedNode?.label || "Select a node"}
+                </span>
                 {selectedNode && (
                   <div className="flex items-center gap-1">
-                    <Button variant="ghost" size="sm" className="h-5 text-[9px] gap-1 px-1.5" onClick={() => selectedNode && copyToClipboard(selectedNode.text, "Unit text")}>
-                      <FileText className="h-2.5 w-2.5" /> Copy Text
+                    <Button variant="ghost" size="sm" className="h-5 text-[9px] gap-1 px-1.5" onClick={() => selectedNode && copyToClipboard(selectedNode.text, "Text")}>
+                      <FileText className="h-2.5 w-2.5" /> Text
                     </Button>
-                    <Button variant="ghost" size="sm" className="h-5 text-[9px] gap-1 px-1.5" disabled={!unitJson} onClick={() => unitJson && copyToClipboard(unitJson, "Unit JSON")}>
-                      <Copy className="h-2.5 w-2.5" /> Copy JSON
+                    <Button variant="ghost" size="sm" className="h-5 text-[9px] gap-1 px-1.5" disabled={!unitJson} onClick={() => unitJson && copyToClipboard(unitJson, "JSON")}>
+                      <Copy className="h-2.5 w-2.5" /> JSON
                     </Button>
                   </div>
                 )}
@@ -358,8 +366,8 @@ const Index = () => {
               <Tabs defaultValue="text" className="flex-1 flex flex-col min-h-0">
                 <TabsList className="h-7 p-0.5 w-fit">
                   <TabsTrigger value="text" className="text-[11px] h-6 px-3">Text</TabsTrigger>
-                  <TabsTrigger value="source" className="text-[11px] h-6 px-3">XML Source</TabsTrigger>
-                  <TabsTrigger value="patterns" className="text-[11px] h-6 px-3">Detected Patterns</TabsTrigger>
+                  <TabsTrigger value="source" className="text-[11px] h-6 px-3">XML</TabsTrigger>
+                  <TabsTrigger value="patterns" className="text-[11px] h-6 px-3">Patterns</TabsTrigger>
                 </TabsList>
                 <TabsContent value="text" className="mt-3 flex-1 overflow-y-auto">
                   <SelectedText node={selectedNode} />
@@ -368,7 +376,7 @@ const Index = () => {
                   {xmlSource ? (
                     <pre className="text-xs text-muted-foreground bg-muted/30 rounded-lg p-4 overflow-x-auto border border-border font-mono leading-relaxed whitespace-pre-wrap">{xmlSource}</pre>
                   ) : (
-                    <p className="text-muted-foreground text-sm italic">Select a node to view its XML source.</p>
+                    <p className="text-muted-foreground text-sm italic">Select a node.</p>
                   )}
                 </TabsContent>
                 <TabsContent value="patterns" className="mt-3 flex-1 overflow-y-auto">
@@ -377,7 +385,6 @@ const Index = () => {
               </Tabs>
             </div>
 
-            {/* JSON Output */}
             <div className="overflow-y-auto px-5 py-4">
               <div className="flex items-center justify-between mb-3">
                 <h2 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">JSON Output</h2>
@@ -398,7 +405,6 @@ const Index = () => {
                 <TabsTrigger value="structure" className="flex-1 text-xs">Structure</TabsTrigger>
                 <TabsTrigger value="text" className="flex-1 text-xs">Text</TabsTrigger>
                 <TabsTrigger value="json" className="flex-1 text-xs">JSON</TabsTrigger>
-                <TabsTrigger value="patterns" className="flex-1 text-xs">Patterns</TabsTrigger>
               </TabsList>
               <TabsContent value="structure" className="p-3 flex-1 overflow-y-auto">
                 <StructureTree nodes={activeData} selectedId={selectedId} onSelect={setSelectedId} />
@@ -408,24 +414,18 @@ const Index = () => {
               </TabsContent>
               <TabsContent value="json" className="p-3 flex-1 overflow-y-auto">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Full Output</span>
                   <Button variant="ghost" size="sm" className="h-6 text-[10px] gap-1" disabled={!fullJson} onClick={() => fullJson && copyToClipboard(fullJson, "JSON")}>
-                    <Copy className="h-3 w-3" /> Copy
+                    <Copy className="h-3 w-3" /> Copy JSON
                   </Button>
                 </div>
                 <pre className="text-[11px] text-foreground bg-muted/30 rounded-lg p-3 overflow-x-auto border border-border font-mono leading-relaxed whitespace-pre-wrap">{fullJson}</pre>
               </TabsContent>
-              <TabsContent value="patterns" className="p-3 flex-1 overflow-y-auto">
-                <BreakdownPanel breakdown={breakdown} />
-              </TabsContent>
             </Tabs>
           </div>
-        </>
-      ) : (
-        <div className="flex-1 flex items-center justify-center px-6">
-          <p className="text-sm text-muted-foreground sm:hidden">Paste XML → structure appears instantly → export JSON</p>
         </div>
-      )}
+      ) : !hasOutput && phase === "idle" ? (
+        <div className="flex-1" />
+      ) : null}
     </div>
   );
 };
