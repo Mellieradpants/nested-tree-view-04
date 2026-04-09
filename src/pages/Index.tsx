@@ -241,7 +241,7 @@ const Index = () => {
           >
             <textarea
               className="w-full h-28 px-3 py-2.5 text-xs bg-transparent text-foreground placeholder:text-muted-foreground focus:outline-none font-mono resize-none leading-relaxed rounded-lg"
-              placeholder={isDragOver ? "Drop XML file here…" : "Paste XML here or drag & drop a file…"}
+              placeholder={isDragOver ? "Drop file here…" : "Paste XML or drop a file…"}
               value={xmlInput}
               onChange={(e) => setXmlInput(e.target.value)}
               onPaste={handlePaste}
@@ -376,7 +376,7 @@ const Index = () => {
                   {xmlSource ? (
                     <pre className="text-xs text-muted-foreground bg-muted/30 rounded-lg p-4 overflow-x-auto border border-border font-mono leading-relaxed whitespace-pre-wrap">{xmlSource}</pre>
                   ) : (
-                    <p className="text-muted-foreground text-sm italic">Select a node.</p>
+                    <p className="text-muted-foreground text-xs">No selection</p>
                   )}
                 </TabsContent>
                 <TabsContent value="patterns" className="mt-3 flex-1 overflow-y-auto">
@@ -423,8 +423,6 @@ const Index = () => {
             </Tabs>
           </div>
         </div>
-      ) : !hasOutput && phase === "idle" ? (
-        <div className="flex-1" />
       ) : null}
     </div>
   );

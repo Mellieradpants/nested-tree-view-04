@@ -14,7 +14,7 @@ const labels: { key: keyof StructuralBreakdown; label: string; color: string }[]
 
 const BreakdownPanel = ({ breakdown }: Props) => {
   if (!breakdown) {
-    return <p className="text-muted-foreground text-sm italic">Select a node to see detected patterns.</p>;
+    return <p className="text-muted-foreground text-xs">No selection</p>;
   }
 
   return (

@@ -6,7 +6,7 @@ interface Props {
 
 const SelectedText = ({ node }: Props) => {
   if (!node) {
-    return <p className="text-muted-foreground text-sm italic">Select a node from the structure tree to view its text.</p>;
+    return <p className="text-muted-foreground text-xs">No selection</p>;
   }
 
   return (
