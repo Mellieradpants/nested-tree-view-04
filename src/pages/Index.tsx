@@ -312,6 +312,19 @@ const Index = () => {
             >
               <Upload className="h-3 w-3" /> Upload
             </Button>
+            {!xmlInput.trim() && phase === "idle" && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 text-xs gap-1.5 text-muted-foreground"
+                onClick={() => {
+                  setXmlInput(SAMPLE_XML);
+                  processXml(SAMPLE_XML, "sample-act.xml");
+                }}
+              >
+                <FlaskConical className="h-3 w-3" /> Try Sample
+              </Button>
+            )}
             {phase === "processing" && (
               <span className="text-xs text-primary animate-pulse ml-2">Processing {processingName}…</span>
             )}
