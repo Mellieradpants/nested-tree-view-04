@@ -93,15 +93,10 @@ function detectSchema(doc: Document): DetectedSchema | null {
     }
   }
 
-  // Only return a schema if we found at least one non-root mapping
+  // Require at least one recognized structural role beyond the root
   const nonRootMappings = Object.keys(mapping).filter(k => k !== rootTag);
-  if (nonRootMappings.length === 0 && rootTag !== CANONICAL.root) {
-    // Root is a known alias but no known structural children found
-    // Still map the root
-    return {
-      name: `${rootTag}-based`,
-      mapping,
-    };
+  if (nonRootMappings.length === 0) {
+    return null; // Will be caught as weak schema below
   }
 
   return {
