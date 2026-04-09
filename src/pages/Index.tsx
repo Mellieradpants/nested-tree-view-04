@@ -438,7 +438,7 @@ const Index = () => {
                   <TabsTrigger value="patterns" className="text-[11px] h-6 px-3">Patterns</TabsTrigger>
                 </TabsList>
                 <TabsContent value="text" className="mt-3 flex-1 overflow-y-auto">
-                  <SelectedText node={selectedNode} allNodes={activeData ?? []} />
+                  <SelectedText node={selectedNode} allNodes={activeData ?? []} xmlSource={xmlSource} />
                 </TabsContent>
                 <TabsContent value="source" className="mt-3 flex-1 overflow-y-auto">
                   {xmlSource ? (
@@ -478,7 +478,7 @@ const Index = () => {
                 <StructureTree nodes={activeData} selectedId={selectedId} onSelect={setSelectedId} />
               </TabsContent>
               <TabsContent value="text" className="p-3 flex-1 overflow-y-auto">
-                <SelectedText node={selectedNode} allNodes={activeData ?? []} />
+                <SelectedText node={selectedNode} allNodes={activeData ?? []} xmlSource={xmlSource} />
               </TabsContent>
               <TabsContent value="json" className="p-3 flex-1 overflow-y-auto">
                 <div className="flex items-center justify-between mb-2">
