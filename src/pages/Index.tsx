@@ -129,7 +129,7 @@ const Index = () => {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-base font-semibold text-foreground tracking-tight">XML Adapter</h1>
-            <p className="text-[11px] text-muted-foreground mt-0.5">Paste or upload XML. One click. Structured JSON out.</p>
+            <p className="text-[11px] text-muted-foreground mt-0.5">Paste or upload XML. Structured JSON, instantly.</p>
           </div>
           {recentDocs.length > 0 && (
             <div className="hidden sm:flex items-center gap-1.5">
@@ -212,6 +212,9 @@ const Index = () => {
             </Button>
             {isDragOver && (
               <span className="text-xs text-primary animate-pulse">Drop file here…</span>
+            )}
+            {!hasOutput && (
+              <span className="text-[11px] text-muted-foreground ml-auto hidden sm:inline">Paste XML → structure appears instantly → export JSON</span>
             )}
           </div>
         </div>
@@ -330,42 +333,8 @@ const Index = () => {
           </div>
         </>
       ) : (
-        /* Empty state */
-        <div className="flex-1 flex flex-col items-center justify-center px-6 text-center">
-          <div className="max-w-md space-y-4">
-            <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mx-auto">
-              <FileText className="h-6 w-6 text-primary" />
-            </div>
-            <h2 className="text-lg font-semibold text-foreground">Paste or upload XML to begin</h2>
-            <p className="text-sm text-muted-foreground leading-relaxed">
-              This tool eliminates the manual work of interpreting complex XML documents. Paste raw XML or upload a file — the adapter parses it deterministically into clean, structured JSON ready for any downstream system.
-            </p>
-            <div className="grid grid-cols-3 gap-3 pt-4 text-center">
-              <div className="space-y-1.5">
-                <div className="text-2xl font-bold text-primary">1</div>
-                <p className="text-[11px] text-muted-foreground">Paste or upload XML</p>
-              </div>
-              <div className="space-y-1.5">
-                <div className="text-2xl font-bold text-primary">2</div>
-                <p className="text-[11px] text-muted-foreground">Click Process</p>
-              </div>
-              <div className="space-y-1.5">
-                <div className="text-2xl font-bold text-primary">3</div>
-                <p className="text-[11px] text-muted-foreground">Copy or download JSON</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Credits */}
-          <div className="mt-12 border-t border-border pt-6 max-w-sm w-full">
-            <p className="text-[10px] text-muted-foreground uppercase tracking-widest mb-3">Built by</p>
-            <p className="text-xs text-muted-foreground leading-relaxed">
-              Designed for professionals who work with legislative, regulatory, and policy XML. This adapter replaces weeks of manual structure mapping with a single deterministic transformation.
-            </p>
-            <p className="text-[10px] text-muted-foreground mt-3">
-              Same input → same output. No inference. No AI interpretation. Programmatic extraction only.
-            </p>
-          </div>
+        <div className="flex-1 flex items-center justify-center px-6">
+          <p className="text-sm text-muted-foreground sm:hidden">Paste XML → structure appears instantly → export JSON</p>
         </div>
       )}
     </div>
