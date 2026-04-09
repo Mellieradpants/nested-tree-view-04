@@ -5,7 +5,7 @@ import SelectedText from "@/components/SelectedText";
 import BreakdownPanel from "@/components/BreakdownPanel";
 import { extractBreakdown } from "@/lib/extractBreakdown";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Copy, Download, FileText, Upload, Clock, X, Play, ChevronRight, FileCode, Layers, Hash } from "lucide-react";
+import { Copy, Download, FileText, Upload, Clock, X, Play, ChevronRight, FileCode, Layers, Hash, FlaskConical } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
