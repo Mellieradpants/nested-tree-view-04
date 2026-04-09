@@ -97,6 +97,8 @@ const SelectedText = ({ node, allNodes = [], xmlSource }: Props) => {
   const isLeaf = children.length === 0;
 
   // Leaf nodes: always show full text
+  const labelMatchesText = node.text.trim().replace(/\s+/g, " ") === node.label.trim().replace(/\s+/g, " ");
+
   if (isLeaf || allNodes.length === 0) {
     return (
       <div className="space-y-3">
@@ -104,7 +106,9 @@ const SelectedText = ({ node, allNodes = [], xmlSource }: Props) => {
           <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{node.type}</span>
           <h2 className="text-base font-semibold text-foreground mt-1">{node.label}</h2>
         </div>
-        <p className="text-sm leading-relaxed text-foreground">{node.text}</p>
+        {!labelMatchesText && (
+          <p className="text-sm leading-relaxed text-foreground">{node.text}</p>
+        )}
         <SourceSnippet xml={xmlSource} />
       </div>
     );
