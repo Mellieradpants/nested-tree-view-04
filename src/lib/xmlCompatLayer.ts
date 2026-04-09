@@ -93,15 +93,10 @@ function detectSchema(doc: Document): DetectedSchema | null {
     }
   }
 
-  // Only return a schema if we found at least one non-root mapping
+  // Require at least one recognized structural role beyond the root
   const nonRootMappings = Object.keys(mapping).filter(k => k !== rootTag);
-  if (nonRootMappings.length === 0 && rootTag !== CANONICAL.root) {
-    // Root is a known alias but no known structural children found
-    // Still map the root
-    return {
-      name: `${rootTag}-based`,
-      mapping,
-    };
+  if (nonRootMappings.length === 0) {
+    return null; // Will be caught as weak schema below
   }
 
   return {
@@ -229,7 +224,37 @@ export function preprocessXml(xml: string): PreprocessResult {
   const schema = detectSchema(doc);
 
   if (!schema) {
-    // Native/canonical schema or already handled by existing parser
+    const rootTag = doc.documentElement.tagName.toLowerCase();
+
+    // If root is canonical, it's a passthrough
+    if (rootTag === CANONICAL.root) {
+      return {
+        xml,
+        detection: {
+          schemaDetected: "canonical",
+          mappingUsed: null,
+          fallbackUsed: true,
+          unsupportedSchemaReason: null,
+        },
+      };
+    }
+
+    // Known root alias but no recognized structural roles — fail clearly
+    if (ROLE_ALIASES.root.includes(rootTag)) {
+      const structuralRoles = ["part", "section", "subsection", "clause"] as const;
+      const allStructuralAliases = structuralRoles.flatMap(r => ROLE_ALIASES[r]);
+      return {
+        xml,
+        detection: {
+          schemaDetected: null,
+          mappingUsed: null,
+          fallbackUsed: false,
+          unsupportedSchemaReason: `Root element <${rootTag}> is a known alias but no recognized structural roles were detected. Expected at least one of: ${allStructuralAliases.join(", ")}`,
+        },
+      };
+    }
+
+    // Canonical passthrough fallback
     return {
       xml,
       detection: {
