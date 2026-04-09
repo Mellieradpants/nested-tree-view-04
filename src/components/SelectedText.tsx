@@ -3,6 +3,7 @@ import { LegislativeNode } from "@/data/legislativeData";
 interface Props {
   node: LegislativeNode | null;
   allNodes?: LegislativeNode[];
+  xmlSource?: string | null;
 }
 
 /**
@@ -77,7 +78,17 @@ function getUniqueDirectText(
   return cleaned.length > 0 ? remaining.trim() : null;
 }
 
-const SelectedText = ({ node, allNodes = [] }: Props) => {
+const SourceSnippet = ({ xml }: { xml?: string | null }) => {
+  if (!xml) return null;
+  return (
+    <div className="mt-4 pt-4 border-t border-border">
+      <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Source Snippet</span>
+      <pre className="mt-2 text-xs text-muted-foreground bg-muted/30 rounded-lg p-3 overflow-x-auto border border-border font-mono leading-relaxed whitespace-pre-wrap">{xml}</pre>
+    </div>
+  );
+};
+
+const SelectedText = ({ node, allNodes = [], xmlSource }: Props) => {
   if (!node) {
     return <p className="text-muted-foreground text-xs">No selection</p>;
   }
@@ -94,6 +105,7 @@ const SelectedText = ({ node, allNodes = [] }: Props) => {
           <h2 className="text-base font-semibold text-foreground mt-1">{node.label}</h2>
         </div>
         <p className="text-sm leading-relaxed text-foreground">{node.text}</p>
+        <SourceSnippet xml={xmlSource} />
       </div>
     );
   }
@@ -109,6 +121,7 @@ const SelectedText = ({ node, allNodes = [] }: Props) => {
         <p className="text-sm leading-relaxed text-muted-foreground italic">
           No direct text content. See child nodes.
         </p>
+        <SourceSnippet xml={xmlSource} />
       </div>
     );
   }
@@ -128,6 +141,7 @@ const SelectedText = ({ node, allNodes = [] }: Props) => {
           No direct text content. See child nodes.
         </p>
       )}
+      <SourceSnippet xml={xmlSource} />
     </div>
   );
 };
