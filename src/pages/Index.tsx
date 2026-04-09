@@ -233,7 +233,14 @@ const Index = () => {
   const xmlSource = useMemo(() => {
     if (!selectedNode) return null;
     const tag = selectedNode.type === "part" ? "part" : selectedNode.type === "section" ? "section" : selectedNode.type === "subsection" ? "subsection" : "clause";
-    return `<${tag} id="${selectedNode.id}">\n  <heading>${selectedNode.label}</heading>\n  <content>${selectedNode.text}</content>\n</${tag}>`;
+    const headingText = selectedNode.label;
+    const contentText = selectedNode.text;
+    const norm = (s: string) => s.trim().replace(/\s+/g, " ").replace(/[\s.,;:—–\-]+$/, "");
+    const labelMatchesText = norm(contentText) === norm(headingText);
+    if (labelMatchesText) {
+      return `<${tag} id="${selectedNode.id}">\n  ${contentText}\n</${tag}>`;
+    }
+    return `<${tag} id="${selectedNode.id}">\n  <heading>${headingText}</heading>\n  <content>${contentText}</content>\n</${tag}>`;
   }, [selectedNode]);
 
   const hasOutput = activeData !== null;
