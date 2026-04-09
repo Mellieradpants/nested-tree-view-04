@@ -32,16 +32,24 @@ const TreeItem = ({ node, allNodes, depth, selectedId, onSelect }: TreeItemProps
         className={`flex items-center gap-2 py-2 px-2 w-full text-left text-sm rounded transition-colors ${
           isSelected
             ? "bg-primary/15 text-primary border-l-2 border-primary"
-            : "hover:bg-muted text-foreground border-l-2 border-transparent"
+            : "hover:bg-muted border-l-2 border-transparent"
         }`}
         style={{ paddingLeft: depth * 18 + 8 }}
       >
         {hasChildren ? (
-          open ? <ChevronDown className="h-3.5 w-3.5 shrink-0 opacity-60" /> : <ChevronRight className="h-3.5 w-3.5 shrink-0 opacity-60" />
+          open ? <ChevronDown className={`h-3.5 w-3.5 shrink-0 ${node.type === "part" ? "opacity-80" : "opacity-50"}`} /> : <ChevronRight className={`h-3.5 w-3.5 shrink-0 ${node.type === "part" ? "opacity-80" : "opacity-50"}`} />
         ) : (
-          <FileText className="h-3.5 w-3.5 shrink-0 opacity-40" />
+          <FileText className="h-3.5 w-3.5 shrink-0 opacity-30" />
         )}
-        <span className={node.type === "part" ? "font-semibold" : "font-normal"}>{node.label}</span>
+        <span className={
+          node.type === "part"
+            ? "font-bold text-foreground tracking-wide"
+            : node.type === "section"
+            ? "font-semibold text-foreground/90"
+            : node.type === "subsection"
+            ? "font-medium text-foreground/70"
+            : "font-normal text-foreground/55"
+        }>{node.label}</span>
       </button>
       {open &&
         children.map((child) => (
