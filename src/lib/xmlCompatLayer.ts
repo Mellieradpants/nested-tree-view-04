@@ -85,10 +85,10 @@ function detectSchema(doc: Document): DetectedSchema | null {
 
   for (const role of rolesToScan) {
     for (const alias of ROLE_ALIASES[role]) {
-      if (alias === (CANONICAL as Record<string, string>)[role]) continue; // skip canonical
+      if (alias === CANONICAL[role]) continue; // skip canonical
       const found = doc.getElementsByTagName(alias);
       if (found.length > 0) {
-        mapping[alias] = (CANONICAL as Record<string, string>)[role];
+        mapping[alias] = CANONICAL[role];
       }
     }
   }
