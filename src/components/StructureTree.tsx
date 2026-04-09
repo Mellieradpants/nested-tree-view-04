@@ -29,17 +29,19 @@ const TreeItem = ({ node, allNodes, depth, selectedId, onSelect }: TreeItemProps
           onSelect(node.id);
           if (hasChildren) setOpen(!open);
         }}
-        className={`flex items-center gap-1.5 py-1.5 px-2 w-full text-left text-sm rounded-md transition-colors ${
-          isSelected ? "bg-primary text-primary-foreground" : "hover:bg-accent text-foreground"
+        className={`flex items-center gap-2 py-2 px-2 w-full text-left text-sm rounded transition-colors ${
+          isSelected
+            ? "bg-primary/15 text-primary border-l-2 border-primary"
+            : "hover:bg-muted text-foreground border-l-2 border-transparent"
         }`}
-        style={{ paddingLeft: depth * 16 + 8 }}
+        style={{ paddingLeft: depth * 18 + 8 }}
       >
         {hasChildren ? (
-          open ? <ChevronDown className="h-3.5 w-3.5 shrink-0 opacity-70" /> : <ChevronRight className="h-3.5 w-3.5 shrink-0 opacity-70" />
+          open ? <ChevronDown className="h-3.5 w-3.5 shrink-0 opacity-60" /> : <ChevronRight className="h-3.5 w-3.5 shrink-0 opacity-60" />
         ) : (
-          <FileText className="h-3.5 w-3.5 shrink-0 opacity-50" />
+          <FileText className="h-3.5 w-3.5 shrink-0 opacity-40" />
         )}
-        <span className={node.type === "part" ? "font-semibold" : ""}>{node.label}</span>
+        <span className={node.type === "part" ? "font-semibold" : "font-normal"}>{node.label}</span>
       </button>
       {open &&
         children.map((child) => (
