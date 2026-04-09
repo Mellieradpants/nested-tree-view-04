@@ -1,6 +1,7 @@
 import { useState, useMemo, useCallback, useRef } from "react";
 import { LegislativeNode } from "@/data/legislativeData";
 import { parseXmlToNodes } from "@/lib/parseXmlToNodes";
+import { preprocessXml, SchemaDetectionResult } from "@/lib/xmlCompatLayer";
 import StructureTree from "@/components/StructureTree";
 import SelectedText from "@/components/SelectedText";
 import BreakdownPanel from "@/components/BreakdownPanel";
@@ -110,10 +111,23 @@ const Index = () => {
       toast.success(`Processed: ${name}`);
     }, 400);
 
-    // Phase 3: Parse XML and reveal full structure
+    // Phase 3: Preprocess + parse XML and reveal full structure
     setTimeout(() => {
       try {
-        const parsed = parseXmlToNodes(xml);
+        const { xml: normalizedXml, detection } = preprocessXml(xml);
+
+        // If unsupported schema, fail clearly
+        if (detection.unsupportedSchemaReason) {
+          toast.error(detection.unsupportedSchemaReason);
+          setPhase("idle");
+          return;
+        }
+
+        if (detection.schemaDetected && detection.schemaDetected !== "canonical") {
+          toast.info(`Schema detected: ${detection.schemaDetected}${detection.mappingUsed ? " (tags normalized)" : ""}`);
+        }
+
+        const parsed = parseXmlToNodes(normalizedXml);
         if (parsed.length === 0) {
           toast.error("No structural elements found in XML");
           setPhase("idle");
