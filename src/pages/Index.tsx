@@ -1,11 +1,11 @@
-import { useState, useMemo, useCallback, useRef } from "react";
+import { useState, useMemo, useCallback, useRef, useEffect } from "react";
 import { legislativeData, LegislativeNode } from "@/data/legislativeData";
 import StructureTree from "@/components/StructureTree";
 import SelectedText from "@/components/SelectedText";
 import BreakdownPanel from "@/components/BreakdownPanel";
 import { extractBreakdown } from "@/lib/extractBreakdown";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Copy, Download, FileText, Upload, Clock, X, Play, ChevronRight } from "lucide-react";
+import { Copy, Download, FileText, Upload, Clock, X, Play, ChevronRight, FileCode, Layers, Hash } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
@@ -14,6 +14,34 @@ interface RecentDoc {
   name: string;
   timestamp: number;
   data: LegislativeNode[];
+}
+
+interface IntakeSummary {
+  fileName: string;
+  fileSize: string;
+  format: string;
+  rootElement: string;
+  elementCount: number;
+  sections: number;
+  subsections: number;
+  clauses: number;
+}
+
+function parseIntakeSummary(xml: string, name: string): IntakeSummary {
+  const sizeBytes = new Blob([xml]).size;
+  const fileSize = sizeBytes < 1024 ? `${sizeBytes} B` : sizeBytes < 1048576 ? `${(sizeBytes / 1024).toFixed(1)} KB` : `${(sizeBytes / 1048576).toFixed(1)} MB`;
+
+  const rootMatch = xml.match(/<([a-zA-Z][\w.-]*)/);
+  const rootElement = rootMatch ? `<${rootMatch[1]}>` : "unknown";
+
+  const allTags = xml.match(/<[a-zA-Z][\w.-]*/g) || [];
+  const elementCount = allTags.length;
+
+  const sectionCount = (xml.match(/<section[\s>]/gi) || []).length || (xml.match(/<part[\s>]/gi) || []).length;
+  const subsectionCount = (xml.match(/<subsection[\s>]/gi) || []).length || (xml.match(/<division[\s>]/gi) || []).length;
+  const clauseCount = (xml.match(/<clause[\s>]/gi) || []).length || (xml.match(/<article[\s>]/gi) || []).length || (xml.match(/<paragraph[\s>]/gi) || []).length;
+
+  return { fileName: name, fileSize, format: "XML", rootElement, elementCount, sections: sectionCount, subsections: subsectionCount, clauses: clauseCount };
 }
 
 const Index = () => {
@@ -29,25 +57,37 @@ const Index = () => {
   const [isDragOver, setIsDragOver] = useState(false);
   const [xmlInput, setXmlInput] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [intakeSummary, setIntakeSummary] = useState<IntakeSummary | null>(null);
+  const [showSummary, setShowSummary] = useState(false);
 
   const processXml = useCallback((xml: string, name: string) => {
     if (!xml.trim()) return;
-    const docId = `doc-${Date.now()}`;
-    const newDoc: RecentDoc = {
-      id: docId,
-      name,
-      timestamp: Date.now(),
-      data: legislativeData,
-    };
-    setActiveData(legislativeData);
-    setActiveDocId(docId);
-    setSelectedId(legislativeData[0]?.id ?? null);
-    setRecentDocs((prev) => {
-      const updated = [newDoc, ...prev.filter((d) => d.id !== docId)].slice(0, 5);
-      localStorage.setItem("recent-docs", JSON.stringify(updated));
-      return updated;
-    });
-    toast.success(`Processed: ${name}`);
+
+    // Show intake summary first
+    const summary = parseIntakeSummary(xml, name);
+    setIntakeSummary(summary);
+    setShowSummary(true);
+
+    // Transition to full output after a brief preview
+    setTimeout(() => {
+      const docId = `doc-${Date.now()}`;
+      const newDoc: RecentDoc = {
+        id: docId,
+        name,
+        timestamp: Date.now(),
+        data: legislativeData,
+      };
+      setActiveData(legislativeData);
+      setActiveDocId(docId);
+      setSelectedId(legislativeData[0]?.id ?? null);
+      setRecentDocs((prev) => {
+        const updated = [newDoc, ...prev.filter((d) => d.id !== docId)].slice(0, 5);
+        localStorage.setItem("recent-docs", JSON.stringify(updated));
+        return updated;
+      });
+      setShowSummary(false);
+      toast.success(`Processed: ${name}`);
+    }, 1200);
   }, []);
 
   const handleFile = useCallback((file: File) => {
