@@ -93,58 +93,37 @@ const SelectedText = ({ node, allNodes = [], xmlSource }: Props) => {
     return <p className="text-muted-foreground text-xs">No selection</p>;
   }
 
+  const normalize = (s: string) => s.trim().replace(/\s+/g, " ").replace(/[\s.,;:—–\-]+$/, "");
   const children = allNodes.filter((n) => n.parentId === node.id);
   const isLeaf = children.length === 0;
 
-  // Leaf nodes: always show full text
-  const normalize = (s: string) => s.trim().replace(/\s+/g, " ").replace(/[\s.,;:—–\-]+$/, "");
-  const labelMatchesText = normalize(node.text) === normalize(node.label);
+  // Determine the single text block to display
+  let displayText: string | null = null;
 
   if (isLeaf || allNodes.length === 0) {
-    return (
-      <div className="space-y-3">
-        <div>
-          <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{node.type}</span>
-          <h2 className="text-base font-semibold text-foreground mt-1">{node.label}</h2>
-        </div>
-        {!labelMatchesText && (
-          <p className="text-sm leading-relaxed text-foreground">{node.text}</p>
-        )}
-        <SourceSnippet xml={xmlSource} />
-      </div>
-    );
+    // Leaf: show node.text unless it's identical to the label
+    displayText = normalize(node.text) === normalize(node.label) ? null : node.text;
+  } else {
+    // Container: use uniqueText (strips child content), or null if duplicated
+    displayText = isContainerWithDuplicatedText(node, allNodes)
+      ? null
+      : getUniqueDirectText(node, allNodes);
   }
 
-  // Container node: check for duplicated text
-  if (isContainerWithDuplicatedText(node, allNodes)) {
-    return (
-      <div className="space-y-3">
-        <div>
-          <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{node.type}</span>
-          <h2 className="text-base font-semibold text-foreground mt-1">{node.label}</h2>
-        </div>
-        <p className="text-sm leading-relaxed text-muted-foreground italic">
-          No direct text content. See child nodes.
-        </p>
-        <SourceSnippet xml={xmlSource} />
-      </div>
-    );
-  }
-
-  // Container with unique direct text
-  const uniqueText = getUniqueDirectText(node, allNodes);
   return (
     <div className="space-y-3">
       <div>
         <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{node.type}</span>
         <h2 className="text-base font-semibold text-foreground mt-1">{node.label}</h2>
       </div>
-      {uniqueText ? (
-        <p className="text-sm leading-relaxed text-foreground">{uniqueText}</p>
+      {displayText ? (
+        <p className="text-sm leading-relaxed text-foreground">{displayText}</p>
       ) : (
-        <p className="text-sm leading-relaxed text-muted-foreground italic">
-          No direct text content. See child nodes.
-        </p>
+        !isLeaf && (
+          <p className="text-sm leading-relaxed text-muted-foreground italic">
+            No direct text content. See child nodes.
+          </p>
+        )
       )}
       <SourceSnippet xml={xmlSource} />
     </div>
