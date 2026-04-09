@@ -376,7 +376,7 @@ const Index = () => {
                   {xmlSource ? (
                     <pre className="text-xs text-muted-foreground bg-muted/30 rounded-lg p-4 overflow-x-auto border border-border font-mono leading-relaxed whitespace-pre-wrap">{xmlSource}</pre>
                   ) : (
-                    <p className="text-muted-foreground text-sm italic">Select a node.</p>
+                    <p className="text-muted-foreground text-xs">No selection</p>
                   )}
                 </TabsContent>
                 <TabsContent value="patterns" className="mt-3 flex-1 overflow-y-auto">
