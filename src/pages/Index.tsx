@@ -110,24 +110,35 @@ const Index = () => {
       toast.success(`Processed: ${name}`);
     }, 400);
 
-    // Phase 3: Reveal full structure
+    // Phase 3: Parse XML and reveal full structure
     setTimeout(() => {
-      const docId = `doc-${Date.now()}`;
-      const newDoc: RecentDoc = {
-        id: docId,
-        name,
-        timestamp: Date.now(),
-        data: legislativeData,
-      };
-      setActiveData(legislativeData);
-      setActiveDocId(docId);
-      setSelectedId(legislativeData[0]?.id ?? null);
-      setRecentDocs((prev) => {
-        const updated = [newDoc, ...prev.filter((d) => d.id !== docId)].slice(0, 5);
-        localStorage.setItem("recent-docs", JSON.stringify(updated));
-        return updated;
-      });
-      setPhase("done");
+      try {
+        const parsed = parseXmlToNodes(xml);
+        if (parsed.length === 0) {
+          toast.error("No structural elements found in XML");
+          setPhase("idle");
+          return;
+        }
+        const docId = `doc-${Date.now()}`;
+        const newDoc: RecentDoc = {
+          id: docId,
+          name,
+          timestamp: Date.now(),
+          data: parsed,
+        };
+        setActiveData(parsed);
+        setActiveDocId(docId);
+        setSelectedId(parsed[0]?.id ?? null);
+        setRecentDocs((prev) => {
+          const updated = [newDoc, ...prev.filter((d) => d.id !== docId)].slice(0, 5);
+          localStorage.setItem("recent-docs", JSON.stringify(updated));
+          return updated;
+        });
+        setPhase("done");
+      } catch (err) {
+        toast.error("Failed to parse XML: " + (err instanceof Error ? err.message : "Unknown error"));
+        setPhase("idle");
+      }
     }, 1000);
   }, []);
 
