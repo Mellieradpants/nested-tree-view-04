@@ -260,6 +260,55 @@ const Index = () => {
         </div>
       </div>
 
+      {/* Intake summary card */}
+      {showSummary && intakeSummary && (
+        <div className="border-b border-border px-4 lg:px-6 py-4 animate-in fade-in slide-in-from-top-2 duration-300">
+          <div className="rounded-lg border border-primary/20 bg-primary/5 p-4 max-w-2xl">
+            <div className="flex items-center gap-2 mb-3">
+              <FileCode className="h-4 w-4 text-primary" />
+              <span className="text-sm font-medium text-foreground">Intake Preview</span>
+              <span className="ml-auto text-[10px] text-muted-foreground animate-pulse">Processing…</span>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-3">
+              <div>
+                <span className="text-[9px] text-muted-foreground uppercase tracking-wider block">File</span>
+                <span className="text-xs text-foreground font-medium truncate block" title={intakeSummary.fileName}>{intakeSummary.fileName.length > 24 ? intakeSummary.fileName.slice(0, 24) + "…" : intakeSummary.fileName}</span>
+              </div>
+              <div>
+                <span className="text-[9px] text-muted-foreground uppercase tracking-wider block">Size</span>
+                <span className="text-xs text-foreground font-medium">{intakeSummary.fileSize}</span>
+              </div>
+              <div>
+                <span className="text-[9px] text-muted-foreground uppercase tracking-wider block">Format</span>
+                <span className="text-xs text-foreground font-medium">{intakeSummary.format}</span>
+              </div>
+              <div>
+                <span className="text-[9px] text-muted-foreground uppercase tracking-wider block">Root</span>
+                <span className="text-xs text-foreground font-mono font-medium">{intakeSummary.rootElement}</span>
+              </div>
+            </div>
+            <div className="flex items-center gap-4 pt-2 border-t border-primary/10">
+              <div className="flex items-center gap-1.5">
+                <Hash className="h-3 w-3 text-muted-foreground" />
+                <span className="text-[11px] text-muted-foreground">{intakeSummary.elementCount} elements</span>
+              </div>
+              {intakeSummary.sections > 0 && (
+                <div className="flex items-center gap-1.5">
+                  <Layers className="h-3 w-3 text-muted-foreground" />
+                  <span className="text-[11px] text-muted-foreground">{intakeSummary.sections} sections</span>
+                </div>
+              )}
+              {intakeSummary.subsections > 0 && (
+                <span className="text-[11px] text-muted-foreground">{intakeSummary.subsections} subsections</span>
+              )}
+              {intakeSummary.clauses > 0 && (
+                <span className="text-[11px] text-muted-foreground">~{intakeSummary.clauses} clauses</span>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Results area */}
       {hasOutput ? (
         <>
