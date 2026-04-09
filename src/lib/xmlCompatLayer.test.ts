@@ -78,7 +78,31 @@ describe("XML Compatibility Layer", () => {
       expect(types).toContain("part");
       expect(types).toContain("section");
     });
-  });
+    });
+
+    it("accepts simplified bill with only one structural role", () => {
+      const simpleBill = `<?xml version="1.0" encoding="UTF-8"?>
+<bill id="simple">
+  <sec id="s1"><heading>Only Section</heading>This is a valid simplified bill.</sec>
+</bill>`;
+      const result = preprocessXml(simpleBill);
+      expect(result.detection.schemaDetected).toBe("bill-based");
+      expect(result.detection.unsupportedSchemaReason).toBeNull();
+      expect(result.detection.fallbackUsed).toBe(false);
+      expect(result.xml).toContain("<section");
+      expect(result.xml).not.toContain("<sec ");
+    });
+
+    it("accepts bill with only clause-level children", () => {
+      const clauseOnly = `<?xml version="1.0" encoding="UTF-8"?>
+<bill id="clause-only">
+  <paragraph id="p1">A single clause is enough.</paragraph>
+</bill>`;
+      const result = preprocessXml(clauseOnly);
+      expect(result.detection.schemaDetected).toBe("bill-based");
+      expect(result.detection.unsupportedSchemaReason).toBeNull();
+      expect(result.xml).toContain("<clause");
+    });
 
   describe("unsupported schema", () => {
     it("fails safely with clear reason", () => {
